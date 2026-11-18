@@ -9,7 +9,7 @@ PathSnap matches noisy GPS observations to the road network and reconstructs the
 | Member | SRN | Model | Other responsibilities |
 | --- | --- | --- | --- |
 | Akshansh Agrawal | PES2UG24CS045 | Logistic Regression | Metrics, HMM and Viterbi decoder |
-| Aayaan Kamil | PES2UG24CS017 | Gradient Boosting | EDA, Folium maps |
+| Aayaan Kamil | PES2UG24CS017 | HistGradientBoostingClassifier | EDA, Folium maps |
 | Akshat Shaurya | PES2UG24CS047 | Random Forest | Labels, candidates, features, Bayesian tuning |
 | Aditya Rao | PES2UG24CS034 | Gaussian Naive Bayes | FastAPI backend, UI, deployment |
 
@@ -47,10 +47,43 @@ Partitions: 80 `train` trips (fitting and cross-validation), 10 `student_test` t
 | Logistic Regression | Linear | Akshansh | Calibrated probabilities for the HMM; interpretable, fast baseline |
 | Gaussian Naive Bayes | Probabilistic | Aditya | Fastest probabilistic baseline; tests the feature-independence assumption |
 | Random Forest | Ensemble (bagging) | Akshat | Nonlinear feature interactions with lower variance than one tree |
-| Gradient Boosting | Ensemble (boosting) | Aayaan | Usually strongest on tabular features; optimises log loss |
+| HistGradientBoostingClassifier | Ensemble (boosting) | Aayaan | Histogram-binned gradient boosting: much faster than GradientBoostingClassifier on ~1.4 M candidate rows; optimises log loss |
 | Decision Tree | Tree | TBC | Explainable nonlinear rules; shows the overfitting that ensembles fix |
 
 All models use the same candidates, features, labels, folds and random seed (42), so the comparison is fair.
+
+## Shared preprocessing package (`pathsnap/`)
+
+One canonical package, numpy-only, so every model trains on identical candidates, labels and features.
+
+| Module | Role |
+| --- | --- |
+| `pathsnap/data.py` | Strict readers for `.track`, `.nodes`, `.arcs` and optional `.route`; zero-padded trip IDs kept as strings; only `train` and `student_test` are readable |
+| `pathsnap/geo.py` | Per-trip local projection to metres (origin = median GPS position) and exact point-to-segment geometry |
+| `pathsnap/candidates.py` | Inference-compatible candidates and 24 features. **Never reads `.route`** (raises if a route is attached) |
+| `pathsnap/labels.py` | Separate, documented observation-label approximation from `.route` (training and scoring only) |
+| `pathsnap/build.py` | Writes reproducible CSVs for both partitions |
+| `pathsnap/eda.py` | Dataset inventory and diagnostics |
+| `pathsnap/metrics.py` | Candidate and observation-level metrics |
+
+**Candidates:** arcs within 50 m of each GPS point (grid index over points sampled every 10 m along every arc, so long arcs are not missed), exact distance, nearest 12 kept. An observation with nothing inside 50 m keeps its single nearest arc (`outside_radius = 1`).
+
+**Features (model inputs, `FEATURE_COLUMNS`):** distance (raw, log, rank, count, minus nearest, ratio to nearest, outside-radius flag); road length and projection position, distance to arc ends; heading difference, its cosine and a reliability flag; step, speed (capped 80 m/s), time delta, large-gap and speed-clipped flags; connectivity (link to the previous/next observation's candidates, from-node in-degree, to-node out-degree, reverse arc exists). `trip_id`, `observation_index`, `timestamp_s` and the trip-local `candidate_arc_id` are identifiers, never features.
+
+**Labels (`pathsnap/labels.py`):** `.route` is an ordered arc sequence, not one label per observation. Each observation is aligned to a route position by monotonic dynamic programming (time order kept, revisits handled, distance cost clipped at 100 m, heading term to separate the two directions of a two-way road). Observations whose aligned arc is more than 50 m away get `label_valid = 0` and are excluded from fitting and scoring. Labels, alignment distances and validity flags live in a separate CSV and are never model inputs.
+
+**Build outputs** (`outputs/features/`, untracked): `train_candidates.csv`, `student_test_candidates.csv`, `train_observation_labels.csv`, `student_test_observation_labels.csv`, `label_quality.csv`, `build_config.json`.
+
+Full build on all 90 trips (measured locally, 12 processes, about 1 minute):
+
+| Partition | Trips | Observations | Candidate rows | Valid labels | Candidate miss rate |
+| --- | --- | --- | --- | --- | --- |
+| train | 80 | 208,417 | 1,361,579 | 88.9% | 0.61% |
+| student_test | 10 | 19,160 | 147,062 | 99.9% | 0.08% |
+
+Median alignment distance per trip is about 4.6 m (train) and 4.8 m (student_test). Most invalid train labels come from two trips whose GPS largely lies away from the reference route: `00000054` (11% valid, 19,313 observations) and `00000033` (41% valid).
+
+**Label limitations:** the alignment is an approximation (arc boundaries near intersections can shift by an observation or two), reference routes are not guaranteed error-free (the routes contain 14 arc endpoint breaks in total), and invalid stretches are excluded rather than corrected.
 
 ## Validation and metrics
 
@@ -62,35 +95,55 @@ All models use the same candidates, features, labels, folds and random seed (42)
 ## Repository layout
 
 ```text
-src/
-  pathsnap_phase1.py      loading, validation, projection, road network, label alignment, candidate features
-  candidate_models.py     Phase 1 smoke-test classifiers and evaluation helpers
-scripts/
-  run_phase1.py           builds EDA inventory and candidate feature CSVs
-  train_models.py         Phase 1 smoke-test model comparison
+pathsnap/                 canonical shared preprocessing package (see above)
+models/
+  logistic_regression/    train_logreg.py + config.json (Akshansh)
+  random_forest/          train_rf.py + config.json (Akshat; uses the legacy Phase 1 features)
+notebooks/
+  LogisticRegression_Colab.ipynb   Colab: clone, upload dataset, build features, train and evaluate LR
 tests/
-  test_phase1.py          pipeline tests
-outputs/                  smoke-test CSVs (full runs are not committed)
+  test_pathsnap.py        package + LR training-loop tests (real-data test when PATHSNAP_DATA is set)
+  test_phase1.py          legacy Phase 1 tests
+src/, scripts/            legacy Phase 1 pipeline, kept because models/random_forest depends on it
+outputs/                  committed historical results; new feature/model outputs are git-ignored
 requirements.txt
 ```
 
 ## How to run
 
+### Shared features (any machine with numpy)
+
 ```powershell
 pip install -r requirements.txt
-python scripts/run_phase1.py --data-root "data/Student folder" --output-dir outputs/phase1
+python -m pathsnap.build --dataset "data/Student folder" --output outputs/features
+python -m pathsnap.build --dataset "data/Student folder" --output outputs/features_smoke --smoke 4   # quick check
+```
+
+### Logistic Regression
+
+```powershell
+python models/logistic_regression/train_logreg.py --features outputs/features --dataset "data/Student folder" --output outputs/logistic_regression
+```
+
+Pipeline per fold: signed `log1p` on heavy-tailed features, median imputer, `StandardScaler`, `LogisticRegression` (L2, C = 1, lbfgs), all fitted on the fold's training trips only. Class imbalance (about 14% positive candidates) is handled with balanced sample weights from each fold's training labels. 5-fold `GroupKFold` by `trip_id` on the 80 train trips, refit on all of them, then one evaluation on the 10 student_test trips. Outputs: `summary.json`, `summary_row.csv`, `cv_folds.csv`, `coefficients.csv`, `config_used.json`, `logistic_regression.joblib` and `student_test_predictions.csv` (per-candidate probabilities for the HMM).
+
+In Colab, open `notebooks/LogisticRegression_Colab.ipynb`, keep `SMOKE = True` for the first run, then set it to `False`. The notebook asks you to upload `Student folder.zip`; Google Drive is not needed. Full run: about 3–6 min to build features and 3–8 min to train on a standard Colab CPU, peak memory about 2 GB.
+
+### Tests
+
+```powershell
+python -m pytest tests/test_pathsnap.py
+$env:PATHSNAP_DATA = "data/Student folder"; python -m pytest tests/test_pathsnap.py   # adds the real-data test
+```
+
+### Legacy Phase 1 (used by the Random Forest)
+
+```powershell
+python scripts/run_phase1.py --data-root "data/Student folder" --output-dir outputs/full
 python -m pytest tests/test_phase1.py
 ```
 
-`run_phase1.py` validates every loaded trip, writes an EDA inventory, and extracts candidate-level features (`--radius-m`, default 80; `--max-candidates`, default 8; `--feature-trips` to limit the run).
-
-Phase 1 smoke comparison:
-
-```powershell
-python scripts/train_models.py --train outputs/smoke_train/candidate_features.csv --student-test outputs/smoke_student_test/candidate_features.csv --output outputs/smoke_model_comparison.csv
-```
-
-The smoke comparison in `outputs/smoke_model_comparison.csv` uses one training trip and one student-test trip only, so its numbers are not model-selection evidence. Full results for the five models above are added as each model is trained on all 80 training trips.
+The smoke comparison in `outputs/smoke_model_comparison.csv` used one training trip and one student-test trip only; it is not model-selection evidence. The Phase 1 features use nearest-route-arc labels (80 m radius, 8 candidates) and differ from the shared package, so results from the two pipelines are not directly comparable.
 
 ## Integrity
 
