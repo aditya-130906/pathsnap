@@ -119,6 +119,27 @@ def make_model(cfg: dict):
     ])
 
 
+def make_numpy_model(cfg: dict):
+    """Same pipeline and objective in numpy (see numpy_logreg.py); used where sklearn cannot load."""
+    sys.path.insert(0, str(HERE))
+    from numpy_logreg import NumpyLogisticRegression
+    hp = cfg["hyperparameters"]
+    return NumpyLogisticRegression(C=hp["C"], max_iter=100, tol=1e-6,
+                                   log1p_columns=[FEATURE_COLUMNS.index(c) for c in cfg["log1p_features"]])
+
+
+def resolve_backend(name: str):
+    if name == "numpy":
+        return "numpy", make_numpy_model
+    try:
+        import sklearn  # noqa: F401
+        return "sklearn", make_model
+    except ImportError:
+        if name == "sklearn":
+            raise
+        return "numpy", make_numpy_model
+
+
 def balanced_weights(y: np.ndarray) -> np.ndarray:
     """n_samples / (n_classes * count(class)), the same rule as sklearn's class_weight='balanced'."""
     counts = np.bincount(y, minlength=2).astype(np.float64)
@@ -178,6 +199,7 @@ def run(features_dir: Path, output_dir: Path, cfg: dict = DEFAULT_CONFIG, datase
         mt = evaluate(tr, model.predict_proba(tr["X"])[:, 1], cfg["threshold"])
         folds.append({"fold": k, "train_trips": len(set(tr["trip_id"])), "val_trips": len(set(va["trip_id"])),
                       "fit_seconds": fit_s, "predict_seconds": pred_s,
+                      "n_iter": int(np.max(getattr(model[-1] if hasattr(model, "steps") else model, "n_iter_", -1))),
                       **{f"val_{x}": v for x, v in mv.items()}, **{f"train_{x}": mt[x] for x in ("macro_f1", "top1_accuracy", "log_loss")}})
         print(f"fold {k}: val macro_f1={mv['macro_f1']:.4f} top1={mv['top1_accuracy']:.4f} log_loss={mv['log_loss']:.4f} "
               f"| train macro_f1={mt['macro_f1']:.4f} ({fit_s:.1f}s)", flush=True)
@@ -219,6 +241,11 @@ def run(features_dir: Path, output_dir: Path, cfg: dict = DEFAULT_CONFIG, datase
         "n_student_test_observations_evaluated": mte["observations_evaluated"], "feature_columns": FEATURE_COLUMNS,
         "python": platform.python_version(),
     }
+    summary["backend"] = cfg.get("backend", "sklearn")
+    summary["numpy"] = np.__version__
+    final_est = model[-1] if hasattr(model, "steps") else model
+    summary["final_fit_iterations"] = int(np.max(getattr(final_est, "n_iter_", -1)))
+    summary["final_fit_converged"] = bool(getattr(final_est, "converged_", True))
     try:
         import sklearn; summary["sklearn"] = sklearn.__version__
     except ImportError:
@@ -237,6 +264,9 @@ def run(features_dir: Path, output_dir: Path, cfg: dict = DEFAULT_CONFIG, datase
     if hasattr(est, "coef_"):
         _write_rows(output_dir / "coefficients.csv",
                     [{"feature": c, "coefficient": float(v)} for c, v in zip(FEATURE_COLUMNS, np.ravel(est.coef_))])
+    if hasattr(model, "save_json"):          # numpy backend: portable parameters + convergence history
+        model.save_json(output_dir / "logistic_regression_params.json", FEATURE_COLUMNS)
+        _write_rows(output_dir / "convergence_history.csv", model.history_)
     try:
         import joblib; joblib.dump(model, output_dir / "logistic_regression.joblib")
     except ImportError:
@@ -258,11 +288,18 @@ def main() -> None:
     p.add_argument("--dataset", type=Path, default=None, help="raw dataset folder, for route continuity only")
     p.add_argument("--folds", type=int, default=None, help="override CV folds (e.g. 2 for a smoke run)")
     p.add_argument("--C", type=float, default=None)
+    p.add_argument("--class-balance", choices=["balanced_sample_weight", "none"], default=None)
+    p.add_argument("--backend", choices=["auto", "sklearn", "numpy"], default="auto",
+                   help="auto = sklearn if it can be imported, otherwise the equivalent numpy implementation")
     a = p.parse_args()
     cfg = json.loads(json.dumps(DEFAULT_CONFIG))
     if a.folds: cfg["cv_folds"] = a.folds
     if a.C is not None: cfg["hyperparameters"]["C"] = a.C
-    run(a.features, a.output, cfg, a.dataset)
+    if a.class_balance: cfg["class_balance"] = a.class_balance
+    backend, factory = resolve_backend(a.backend)
+    cfg["backend"] = backend
+    print("backend:", backend)
+    run(a.features, a.output, cfg, a.dataset, model_factory=factory)
 
 
 if __name__ == "__main__":

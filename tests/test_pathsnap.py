@@ -153,3 +153,40 @@ def test_real_data_build_and_training_loop(tmp_path):
     res = mod.run(tmp_path / "features", tmp_path / "lr", cfg, dataset=Path(DATA), model_factory=lambda c: NumpyLogReg())
     assert 0 < res["student_test_top1_accuracy"] <= 1 and 0 <= res["candidate_miss_rate"] < 0.05
     assert (tmp_path / "lr" / "cv_folds.csv").exists() and (tmp_path / "lr" / "student_test_predictions.csv").exists()
+
+
+def _numpy_lr():
+    sys.path.insert(0, str(ROOT / "models" / "logistic_regression"))
+    from numpy_logreg import NumpyLogisticRegression
+    return NumpyLogisticRegression
+
+
+def test_numpy_logreg_reaches_optimum_of_sklearn_objective():
+    """At the solution the gradient of C*sum(s*logloss) + 0.5*||w||^2 (intercept unpenalised) is ~0."""
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(5000, 4)); X[:, 3] = np.abs(X[:, 3]) * 50
+    true_w = np.array([1.5, -2.0, 0.5, 0.0])
+    y = (rng.random(5000) < 1 / (1 + np.exp(-(X[:, :3] @ true_w[:3] - 1.0)))).astype(int)
+    s = np.where(y == 1, 2.0, 0.7)
+    m = _numpy_lr()(C=0.5, log1p_columns=[3]).fit(X, y, logreg__sample_weight=s)
+    assert m.converged_
+    Z = np.c_[m._transform(X), np.ones(len(y))]
+    beta = np.r_[m.coef_[0], m.intercept_]
+    p = 1 / (1 + np.exp(-Z @ beta))
+    grad = 0.5 * Z.T @ (s * (p - y)) + np.r_[beta[:-1], 0.0]
+    assert np.max(np.abs(grad)) < 1e-3
+    # objective decreases monotonically over Newton iterations
+    obj = [h["objective"] for h in m.history_]
+    assert all(b <= a + 1e-9 for a, b in zip(obj, obj[1:]))
+    # recovers the sign of the true effects (standardised scale)
+    assert m.coef_[0][0] > 0 and m.coef_[0][1] < 0
+
+
+def test_numpy_logreg_json_roundtrip(tmp_path):
+    rng = np.random.default_rng(1)
+    X = rng.normal(size=(500, 3)); y = (X[:, 0] + rng.normal(size=500) > 0).astype(int)
+    m = _numpy_lr()(C=1.0, log1p_columns=[2]).fit(X, y)
+    m.save_json(tmp_path / "p.json", ["a", "b", "c"])
+    import json as _j
+    m2 = _numpy_lr().from_dict(_j.loads((tmp_path / "p.json").read_text()))
+    assert np.allclose(m.predict_proba(X), m2.predict_proba(X))
