@@ -127,6 +127,8 @@ python models/logistic_regression/train_logreg.py --features outputs/features --
 
 Pipeline per fold: signed `log1p` on heavy-tailed features, median imputer, `StandardScaler`, `LogisticRegression` (L2, C = 1, lbfgs), all fitted on the fold's training trips only. Class imbalance (about 14% positive candidates) is handled with balanced sample weights from each fold's training labels. 5-fold `GroupKFold` by `trip_id` on the 80 train trips, refit on all of them, then one evaluation on the 10 student_test trips. Outputs: `summary.json`, `summary_row.csv`, `cv_folds.csv`, `coefficients.csv`, `config_used.json`, `logistic_regression.joblib` and `student_test_predictions.csv` (per-candidate probabilities for the HMM).
 
+Committed results: `outputs/logistic_regression/` (summary, fold scores, coefficients, plots, Folium map, student_test probabilities); details and numbers in `models/logistic_regression/README.md`. Use `--backend numpy` where scikit-learn cannot be installed; it fits the same objective.
+
 In Colab, open `notebooks/LogisticRegression_Colab.ipynb`, keep `SMOKE = True` for the first run, then set it to `False`. The notebook asks you to upload `Student folder.zip`; Google Drive is not needed. Full run: about 3–6 min to build features and 3–8 min to train on a standard Colab CPU, peak memory about 2 GB.
 
 ### Tests

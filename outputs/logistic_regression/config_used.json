@@ -1,0 +1,30 @@
+{
+  "model_name": "logistic_regression",
+  "algorithm_family": "Linear (probabilistic)",
+  "owner": "Akshansh Agrawal",
+  "random_seed": 42,
+  "cv_folds": 5,
+  "threshold": 0.5,
+  "class_balance": "none",
+  "log1p_features": [
+    "distance_m",
+    "distance_minus_min",
+    "distance_ratio_to_min",
+    "segment_length_m",
+    "distance_to_start_m",
+    "distance_to_end_m",
+    "step_distance_m",
+    "speed_mps",
+    "time_delta_s",
+    "from_node_in_degree",
+    "to_node_out_degree"
+  ],
+  "hyperparameters": {
+    "C": 1.0,
+    "solver": "lbfgs",
+    "max_iter": 2000,
+    "tol": 0.0001
+  },
+  "class_balance_selection": "Chosen by 5-fold GroupKFold CV Macro F1 on the 80 train trips: none 0.8595 vs balanced_sample_weight 0.8133 (CV log loss 0.169 vs 0.263). Imbalance (14% positives) is handled by per-observation Top-1 ranking and Macro F1 evaluation; balanced weights inflated positive probabilities.",
+  "backend": "numpy"
+}
