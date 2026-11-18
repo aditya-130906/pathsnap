@@ -1,15 +1,14 @@
 """Phase 1 data pipeline for PathSnap.
 
 The raw route is a sequence of traversed arc ids, not a per-observation label.
-This module therefore aligns each GPS observation to the closest *route arc* in
-metres.  That assumption is isolated in ``align_reference_arcs`` and every
-alignment distance is retained for inspection.
+This module derives training labels with sequence-constrained alignment along
+the ordered route and retains alignment diagnostics for inspection.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from collections import Counter, defaultdict
+from collections import defaultdict
 import math
 from typing import Iterable
 
@@ -88,6 +87,9 @@ def validate_trip(trip: Trip) -> dict:
         errors.append("timestamps are not strictly increasing")
     if (dt > 10).any():
         warnings.append(f"{int((dt > 10).sum())} timestamp gap(s) exceed 10 seconds")
+    duplicate_gps_rows = int(trip.track.duplicated().sum())
+    if duplicate_gps_rows:
+        warnings.append(f"{duplicate_gps_rows} duplicate GPS row(s)")
     if len(trip.route) == len(trip.track):
         warnings.append("route and track have equal lengths; this still does not prove row alignment")
     return {"trip_id": trip.trip_id, "partition": trip.partition, "ok": not errors, "errors": errors, "warnings": warnings}
@@ -153,6 +155,10 @@ class RoadNetwork:
             return np.array([], dtype=np.int64), np.array([], dtype=float), np.array([], dtype=float)
         arc_ids = np.fromiter(ids, dtype=np.int64)
         distances, fractions = segment_distances(point_xy, self.start_xy[arc_ids], self.end_xy[arc_ids])
+        within_radius = distances <= radius_m
+        arc_ids, distances, fractions = arc_ids[within_radius], distances[within_radius], fractions[within_radius]
+        if not len(arc_ids):
+            return np.array([], dtype=np.int64), np.array([], dtype=float), np.array([], dtype=float)
         keep = np.argsort(distances)[:max_candidates]
         return arc_ids[keep], distances[keep], fractions[keep]
 
@@ -178,23 +184,60 @@ def _movement_features(track_xy: np.ndarray, timestamp: np.ndarray) -> tuple[np.
     return step, dt, speed, heading
 
 
-def align_reference_arcs(network: RoadNetwork) -> tuple[np.ndarray, np.ndarray]:
-    """Align observations to closest arc from the reference-route sequence only.
+def align_reference_arcs(network: RoadNetwork, base_max_advance: int = 12) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Align GPS observations to the *ordered* reference route with dynamic programming.
 
-    This is an explicit modelling assumption because the provided files contain
-    no per-observation alignment. It must be replaced if organisers provide one.
+    The route is kept as a sequence instead of deduplicating arc ids, so a
+    revisited road can receive different route positions.  Each observation may
+    stay on its current route position or advance forward; it cannot move
+    backwards.  The emission cost combines segment distance and, where defined,
+    direction mismatch.  This is a training-label derivation only and is never
+    used during inference.
     """
-    allowed = np.unique(network.trip.route)
-    starts, ends = network.start_xy[allowed], network.end_xy[allowed]
+    route = network.trip.route.astype(np.int64)
+    starts, ends = network.start_xy[route], network.end_xy[route]
     points = network.projection.project(network.trip.track.lon, network.trip.track.lat)
-    labels = np.empty(len(points), dtype=np.int64)
-    distances = np.empty(len(points), dtype=float)
-    # Vectorised over route arcs and looped over points to control memory use.
-    for i, point in enumerate(points):
+    timestamp = network.trip.track.timestamp.to_numpy(dtype=float)
+    _, dt, speed, heading = _movement_features(points, timestamp)
+    route_bearing = network.bearing_deg[route]
+    n_obs, n_route = len(points), len(route)
+    emission = np.empty((n_obs, n_route), dtype=float)
+    distances = np.empty((n_obs, n_route), dtype=float)
+    for obs_id, point in enumerate(points):
         d, _ = segment_distances(point, starts, ends)
-        best = int(np.argmin(d))
-        labels[i], distances[i] = allowed[best], d[best]
-    return labels, distances
+        distances[obs_id] = d
+        direction_cost = np.zeros(n_route)
+        if np.isfinite(heading[obs_id]):
+            diff = np.abs((route_bearing - heading[obs_id] + 180) % 360 - 180)
+            direction_cost = 0.25 * diff / 180.0
+        emission[obs_id] = d / 15.0 + direction_cost
+
+    # Start near the beginning of the recorded reference route, but permit a
+    # short unobserved prefix at a small cost.
+    cost = emission[0] + 0.03 * np.arange(n_route)
+    back = np.full((n_obs, n_route), -1, dtype=np.int32)
+    for obs_id in range(1, n_obs):
+        gap = dt[obs_id] if np.isfinite(dt[obs_id]) else 1.0
+        estimated_advance = 0 if not np.isfinite(speed[obs_id]) else int(np.ceil(speed[obs_id] * gap / 25.0))
+        max_advance = max(base_max_advance, estimated_advance)
+        if gap > 10:
+            max_advance = max(max_advance, 60)
+        next_cost = np.full(n_route, np.inf)
+        for route_pos in range(n_route):
+            first = max(0, route_pos - max_advance)
+            previous = cost[first:route_pos + 1]
+            advances = np.arange(route_pos - first, -1, -1)
+            transition = 0.015 * advances
+            chosen = int(np.argmin(previous + transition))
+            back[obs_id, route_pos] = first + chosen
+            next_cost[route_pos] = emission[obs_id, route_pos] + previous[chosen] + transition[chosen]
+        cost = next_cost
+
+    positions = np.empty(n_obs, dtype=np.int64)
+    positions[-1] = int(np.argmin(cost))
+    for obs_id in range(n_obs - 1, 0, -1):
+        positions[obs_id - 1] = back[obs_id, positions[obs_id]]
+    return route[positions], distances[np.arange(n_obs), positions], positions
 
 
 def extract_candidate_features(network: RoadNetwork, radius_m: float = 80.0, max_candidates: int = 8) -> tuple[pd.DataFrame, dict]:
@@ -202,7 +245,7 @@ def extract_candidate_features(network: RoadNetwork, radius_m: float = 80.0, max
     track = network.trip.track
     points = network.projection.project(track.lon, track.lat)
     step, dt, speed, heading = _movement_features(points, track.timestamp.to_numpy(dtype=float))
-    reference_arc, alignment_distance = align_reference_arcs(network)
+    reference_arc, alignment_distance, reference_route_position = align_reference_arcs(network)
     rows: list[dict] = []
     previous_ids: np.ndarray | None = None
     for obs_id, point in enumerate(points):
@@ -210,17 +253,19 @@ def extract_candidate_features(network: RoadNetwork, radius_m: float = 80.0, max
         previous_to_nodes = set()
         if previous_ids is not None and len(previous_ids):
             previous_to_nodes = set(network.trip.arcs.iloc[previous_ids].to_node.tolist())
-        for arc_id, distance, fraction in zip(arc_ids, distances, fractions):
+        nearest_distance = float(distances[0]) if len(distances) else np.nan
+        for candidate_rank, (arc_id, distance, fraction) in enumerate(zip(arc_ids, distances, fractions), start=1):
             road_heading = network.bearing_deg[arc_id]
             hdiff = np.nan if not np.isfinite(heading[obs_id]) else abs((road_heading - heading[obs_id] + 180) % 360 - 180)
             rows.append({
                 "trip_id": network.trip.trip_id, "partition": network.trip.partition, "observation_id": obs_id,
                 "timestamp": track.timestamp.iat[obs_id], "arc_id": int(arc_id), "label": int(arc_id == reference_arc[obs_id]),
                 "distance_to_arc_m": float(distance), "projection_fraction": float(fraction), "arc_length_m": float(network.length_m[arc_id]),
+                "candidate_rank": candidate_rank, "relative_distance_to_nearest": float(distance / max(nearest_distance, 1e-6)),
                 "arc_bearing_deg": float(road_heading), "gps_heading_deg": float(heading[obs_id]), "heading_difference_deg": float(hdiff),
-                "gps_step_m": float(step[obs_id]), "time_delta_s": float(dt[obs_id]), "speed_mps": float(speed[obs_id]),
+                "gps_step_m": float(step[obs_id]), "time_delta_s": float(dt[obs_id]), "speed_mps": float(speed[obs_id]), "large_gap": int(np.isfinite(dt[obs_id]) and dt[obs_id] > 10),
                 "connects_from_previous_candidates": int(network.trip.arcs.from_node.iat[arc_id] in previous_to_nodes),
-                "reference_arc_id": int(reference_arc[obs_id]), "reference_alignment_distance_m": float(alignment_distance[obs_id]),
+                "reference_arc_id": int(reference_arc[obs_id]), "reference_route_position": int(reference_route_position[obs_id]), "reference_alignment_distance_m": float(alignment_distance[obs_id]),
             })
         previous_ids = arc_ids
     candidates = pd.DataFrame(rows)
@@ -232,6 +277,9 @@ def extract_candidate_features(network: RoadNetwork, radius_m: float = 80.0, max
         "candidate_miss_rate": 1 - labels_found / len(track),
         "reference_alignment_distance_median": float(np.median(alignment_distance)),
         "reference_alignment_distance_max": float(np.max(alignment_distance)),
+        "reference_route_position_start": int(reference_route_position[0]),
+        "reference_route_position_end": int(reference_route_position[-1]),
+        "reference_route_position_backtracks": int((np.diff(reference_route_position) < 0).sum()),
     }
     return candidates, diagnostics
 
@@ -245,6 +293,7 @@ def trip_eda_row(trip: Trip, validation: dict) -> dict:
         "trip_id": trip.trip_id, "partition": trip.partition, "valid": validation["ok"],
         "track_rows": len(trip.track), "node_rows": len(trip.nodes), "arc_rows": len(trip.arcs), "route_rows": len(trip.route),
         "missing_values": int(trip.track.isna().sum().sum() + trip.nodes.isna().sum().sum() + trip.arcs.isna().sum().sum()),
+        "duplicate_gps_rows": int(trip.track.duplicated().sum()),
         "non_increasing_timestamps": int((dt <= 0).sum()), "gaps_over_10_seconds": int((dt > 10).sum()),
         "median_dt_s": float(dt.median()), "max_dt_s": float(dt.max()),
         "track_lon_min": float(trip.track.lon.min()), "track_lon_max": float(trip.track.lon.max()),

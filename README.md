@@ -98,13 +98,13 @@ Median alignment distance per trip is about 4.6 m (train) and 4.8 m (student_tes
 pathsnap/                 canonical shared preprocessing package (see above)
 models/
   logistic_regression/    train_logreg.py + config.json (Akshansh)
-  random_forest/          train_rf.py + config.json (Akshat; uses the legacy Phase 1 features)
+  random_forest/          train_rf.py + config.json (Akshat; uses the Phase 1 features)
 notebooks/
   LogisticRegression_Colab.ipynb   Colab: clone, upload dataset, build features, train and evaluate LR
 tests/
   test_pathsnap.py        package + LR training-loop tests (real-data test when PATHSNAP_DATA is set)
-  test_phase1.py          legacy Phase 1 tests
-src/, scripts/            legacy Phase 1 pipeline, kept because models/random_forest depends on it
+  test_phase1.py          Phase 1 pipeline tests
+src/, scripts/            Phase 1 data-processing pipeline (run_phase1.py); used by models/random_forest
 outputs/                  committed historical results; new feature/model outputs are git-ignored
 requirements.txt
 ```
@@ -136,14 +136,20 @@ python -m pytest tests/test_pathsnap.py
 $env:PATHSNAP_DATA = "data/Student folder"; python -m pytest tests/test_pathsnap.py   # adds the real-data test
 ```
 
-### Legacy Phase 1 (used by the Random Forest)
+### Phase 1 data-processing pipeline (`scripts/run_phase1.py`, used by the Random Forest)
 
 ```powershell
-python scripts/run_phase1.py --data-root "data/Student folder" --output-dir outputs/full
+python scripts/run_phase1.py --data-root "data/Student folder" --partitions train --trip-ids 00000001 --output-dir outputs/preprocessing_smoke --feature-trips 00000001 --radius-m 80 --max-candidates 8
+python scripts/run_phase1.py --data-root "data/Student folder" --partitions train --output-dir outputs/train_all --radius-m 80 --max-candidates 8
+python scripts/run_phase1.py --data-root "data/Student folder" --partitions student_test --output-dir outputs/student_test_all --radius-m 80 --max-candidates 8
 python -m pytest tests/test_phase1.py
 ```
 
-The smoke comparison in `outputs/smoke_model_comparison.csv` used one training trip and one student-test trip only; it is not model-selection evidence. The Phase 1 features use nearest-route-arc labels (80 m radius, 8 candidates) and differ from the shared package, so results from the two pipelines are not directly comparable.
+It loads and validates the four files, projects to local metres, builds directed road segments with a uniform-grid index, keeps up to 8 candidates within 80 m, derives training labels by dynamic-programming alignment to the ordered route (point-to-segment distance plus heading mismatch, forward progress with repeated arcs allowed, a wider forward window at long GPS gaps), and exports spatial, directional, temporal and road-connectivity features. `.route` is used only for labels, never as an inference feature.
+
+**Two pipelines exist.** `pathsnap/` (50 m, 12 candidates, separate label CSV) and Phase 1 (80 m, 8 candidates, labels in the feature table) produce different candidate sets and labels, so model results from the two are not directly comparable. The team should pick one for the final model comparison.
+
+The smoke comparison in `outputs/smoke_model_comparison.csv` used one training trip and one student-test trip only; it is not model-selection evidence.
 
 ## Integrity
 
