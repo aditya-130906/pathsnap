@@ -1,0 +1,16 @@
+{
+ "random_seed": 42,
+ "cv_folds": 5,
+ "unreliable_median_alignment_m": 50.0,
+ "max_fit_rows": 200000,
+ "max_val_rows": 60000,
+ "k_sweep": [5, 15, 50, 150],
+ "hyperparameters": {
+  "n_neighbors": 50,
+  "weights": "distance",
+  "metric": "minkowski",
+  "p": 2,
+  "algorithm": "auto",
+  "leaf_size": 40
+ }
+}

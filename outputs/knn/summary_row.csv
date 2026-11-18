@@ -1,0 +1,2 @@
+model_name,algorithm_family,cv_macro_f1,student_test_macro_f1,student_test_top1_accuracy,candidate_miss_rate,precision,recall,log_loss,training_time_s,inference_time_s,hyperparameters
+KNN,Instance-based (k-nearest neighbours),0.8690541067305816,0.8820214324377686,0.8078288100208768,0.003810020876826692,0.8148087610330174,0.7835175774087075,0.16918767758236164,0.4707796573638916,83.4148759841919,"{""n_neighbors"": 50, ""weights"": ""distance"", ""metric"": ""minkowski"", ""p"": 2, ""algorithm"": ""auto"", ""leaf_size"": 40}"
