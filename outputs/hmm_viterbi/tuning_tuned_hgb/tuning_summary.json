@@ -1,0 +1,33 @@
+{
+  "sampler": "Optuna TPESampler(seed=42)",
+  "trials": 30,
+  "tuning_trips": [
+    "00000005",
+    "00000006",
+    "00000020",
+    "00000037",
+    "00000046",
+    "00000048",
+    "00000057",
+    "00000069",
+    "00000070",
+    "00000071",
+    "00000079",
+    "00000088",
+    "00000090",
+    "00000093"
+  ],
+  "tuning_observations": 18116,
+  "eligible_tuning_observations": 17952,
+  "objective": "post-Viterbi Top-1 over label-eligible observations of the tuning train trips",
+  "default_score": 0.8890374331550802,
+  "best_score": 0.8991755793226381,
+  "best_params": {
+    "w_emit": 0.3106434873254834,
+    "beta_m": 56.35344331792949,
+    "beta_per_s": 1.261755413774535,
+    "unreachable_logp": -69.38166071787654
+  },
+  "seconds": 82.22330904006958,
+  "note": "emissions are in-sample HGB probabilities (final model fitted on all train trips)"
+}

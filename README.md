@@ -11,6 +11,65 @@ GPS track ──► projection to metres ──► candidate arcs ──► feat
 
 ---
 
+## Final system (deployed)
+
+**Pipeline:** HGB candidate scoring (Aayaan's model, 18 features, top-8 arcs within 150 m) → HMM/Viterbi route
+reconstruction with Optuna-tuned parameters → FastAPI backend (Laptop 1) → Folium evaluator UI (Laptop 2).
+
+**Accuracy progression** (student_test, held out; Top-1 over the same 19,018 label-eligible observations,
+142 of 19,160 observations have no usable proxy label):
+
+| Stage | Top-1 | Route continuity | Route F1 |
+| --- | --- | --- | --- |
+| Original HGB | 80.76% | 0.890 | 0.685 |
+| Optuna-tuned HGB | 81.10% | | |
+| Tuned HGB + HMM/Viterbi | 87.71% | | |
+| **Original HGB + HMM/Viterbi (deployed)** | **88.78%** | **0.975** | **0.962** |
+
+- **The ~95% target was not reached.** The best verified held-out Top-1 is **88.78%**.
+  Remaining errors come mainly from the proxy labels (nearest route arc) at intersections and on parallel or two-way arcs,
+  off-route GPS stretches, and short stretches where Viterbi follows a parallel road.
+- The deployed combination was chosen on **train** trips (HMM tuning objective 0.9110 with the original HGB vs
+  0.8992 with the tuned HGB), not on student_test.
+- HGB Bayesian optimisation: Optuna TPESampler(seed=42), 12 trials, GroupKFold(3) by trip_id over 40 random train trips; CV Top-1 0.7060 →
+  0.7238. Best: learning_rate=0.0235, max_iter=100, max_leaf_nodes=25, max_depth=None, min_samples_leaf=54, l2_regularization=0.0618.
+  Tuned model: `models/histogram_gradient_boosting/hgb_model_tuned.joblib`; history in `outputs/histogram_gradient_boosting/optuna/`.
+- HMM tuning: Optuna TPE on 14 train trips, 30 trials; config `outputs/hmm_viterbi/tuning/best_hmm_config.json`.
+- Five-model comparison (with pipeline and denominator notes): `outputs/comparison/model_comparison.md`.
+- Technical report: `outputs/report/PathSnap_Technical_Report.pdf`. Route maps: `outputs/hmm_viterbi/maps/`.
+- Two-laptop setup, firewall and demo script: [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Run the deployed system
+
+```powershell
+# Laptop 1 (backend)
+python -m pip install -r requirements-api.txt
+$env:PATHSNAP_TRIPS_DIR = "C:\pathsnap_trips"          # folder with <trip_id>/<trip_id>.track/.nodes/.arcs[/.route]
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+# Laptop 2 (UI)
+python -m pip install -r requirements-ui.txt
+$env:PATHSNAP_API_URL = "http://<LAPTOP-1-IP>:8000"
+python -m uvicorn ui.app:app --host 127.0.0.1 --port 8501     # open http://localhost:8501
+```
+
+### Reproduce the final results
+
+```powershell
+python models/histogram_gradient_boosting/preprocessing/build_features.py --dataset "data/Student folder/Student folder" --partition train --output work/full_train.csv
+python models/histogram_gradient_boosting/preprocessing/build_features.py --dataset "data/Student folder/Student folder" --partition student_test --output work/full_student_test.csv
+python models/histogram_gradient_boosting/optimize_hgb.py --train work/full_train.csv --student-test work/full_student_test.csv --trials 12 --cv-trips 40 --folds 3
+python -m pathsnap_app.tune_hmm --features work/full_train.csv --dataset "data/Student folder/Student folder" --trials 30 --n-trips 14 --max-obs 2500 --output outputs/hmm_viterbi/tuning
+python -m pathsnap_app.evaluate_hmm --features work/full_student_test.csv --dataset "data/Student folder/Student folder" --partition student_test --config outputs/hmm_viterbi/tuning/best_hmm_config.json --output outputs/hmm_viterbi/student_test_original_hgb_viterbi
+python tools/compare_models.py; python tools/make_route_maps.py --dataset "data/Student folder" --trips 00000077 00000091 00000009; python tools/build_report.py
+```
+
+The feature CSVs rebuilt this way match the SHA-256 hashes recorded in `models/histogram_gradient_boosting/config.json`.
+HGB inference runs through scikit-learn, or through `pathsnap_app/hgb_numpy.py` (the same fitted trees evaluated in numpy,
+identical to scikit-learn's probabilities to 1e-16 on all 137,056 student_test candidates) where scikit-learn cannot load.
+
+---
+
 ## Team
 
 | Member | SRN | Model | Other responsibilities |

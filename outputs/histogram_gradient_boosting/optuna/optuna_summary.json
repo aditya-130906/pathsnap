@@ -1,0 +1,104 @@
+{
+  "sampler": "Optuna TPESampler(seed=42)",
+  "trials": 12,
+  "objective": "OOF observation Top-1 (eligible obs)",
+  "cv": "GroupKFold(3) by trip_id over 40 random train trips",
+  "cv_trips": [
+    "00000004",
+    "00000005",
+    "00000008",
+    "00000010",
+    "00000012",
+    "00000014",
+    "00000021",
+    "00000025",
+    "00000027",
+    "00000028",
+    "00000033",
+    "00000034",
+    "00000035",
+    "00000036",
+    "00000037",
+    "00000038",
+    "00000039",
+    "00000041",
+    "00000045",
+    "00000046",
+    "00000047",
+    "00000050",
+    "00000051",
+    "00000054",
+    "00000061",
+    "00000062",
+    "00000068",
+    "00000069",
+    "00000072",
+    "00000074",
+    "00000081",
+    "00000083",
+    "00000084",
+    "00000088",
+    "00000092",
+    "00000093",
+    "00000095",
+    "00000096",
+    "00000097",
+    "00000099"
+  ],
+  "cv_rows": 692993,
+  "optimisation_seconds": 193.4216651916504,
+  "original_cv": {
+    "top1": 0.7060031676288765,
+    "macro_f1": 0.8213680921381676,
+    "log_loss": 0.19885074934156546
+  },
+  "tuned_cv": {
+    "top1": 0.7238031982833495,
+    "macro_f1": 0.8272245391467581,
+    "log_loss": 0.18242742139404233
+  },
+  "best_params": {
+    "learning_rate": 0.02349924643780837,
+    "max_iter": 100,
+    "max_leaf_nodes": 25,
+    "max_depth": null,
+    "min_samples_leaf": 54,
+    "l2_regularization": 0.06176818045008645
+  },
+  "best_trial": 11,
+  "student_test": {
+    "original": {
+      "params": {
+        "learning_rate": 0.1,
+        "max_iter": 100,
+        "max_leaf_nodes": 31,
+        "max_depth": null,
+        "min_samples_leaf": 20,
+        "l2_regularization": 1.0
+      },
+      "student_test_top1_accuracy": 0.8075507414028815,
+      "student_test_eligible_observations": 19018,
+      "student_test_macro_f1": 0.8798026034466586,
+      "student_test_log_loss": 0.13118939598394605,
+      "fit_seconds": 5.583855152130127,
+      "inference_seconds": 0.1225290298461914
+    },
+    "tuned": {
+      "params": {
+        "learning_rate": 0.02349924643780837,
+        "max_iter": 100,
+        "max_leaf_nodes": 25,
+        "max_depth": null,
+        "min_samples_leaf": 54,
+        "l2_regularization": 0.06176818045008645
+      },
+      "student_test_top1_accuracy": 0.8110211378693869,
+      "student_test_eligible_observations": 19018,
+      "student_test_macro_f1": 0.8791915186081665,
+      "student_test_log_loss": 0.14290598671062987,
+      "fit_seconds": 5.761322259902954,
+      "inference_seconds": 0.11373019218444824
+    }
+  },
+  "sklearn": "1.9.1"
+}

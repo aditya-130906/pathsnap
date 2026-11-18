@@ -1,0 +1,20 @@
+{
+  "denominator": "label-eligible observations (HGB proxy labels: GPS within 30 m of a reference-route arc)",
+  "eligible_observations": 19018,
+  "ineligible_observations": 142,
+  "observations": 19160,
+  "stages": {
+    "Original HGB (Aayaan)": 0.8075507414028815,
+    "Optuna-tuned HGB": 0.8110211378693869,
+    "Tuned HGB + HMM/Viterbi": 0.8770638342622779,
+    "Original HGB + HMM/Viterbi (deployed)": 0.8877905142496583
+  },
+  "route_continuity": {
+    "original_hgb": 0.8901524637883089,
+    "final": 0.9748432678772672
+  },
+  "route_f1_mean": {
+    "original_hgb": 0.6848174237760484,
+    "final": 0.9621160136722293
+  }
+}
