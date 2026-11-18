@@ -1,0 +1,15 @@
+{
+ "random_seed": 42,
+ "cv_folds": 5,
+ "hyperparameters": {
+  "n_estimators": 150,
+  "max_depth": 20,
+  "min_samples_leaf": 10,
+  "max_features": "sqrt",
+  "max_samples": 0.25,
+  "bootstrap": true,
+  "class_weight": "balanced_subsample",
+  "criterion": "gini"
+ },
+ "unreliable_median_alignment_m": 50.0
+}
