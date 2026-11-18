@@ -1,0 +1,11 @@
+{
+  "confusion_matrix": {
+    "tn": 92204,
+    "fp": 15590,
+    "fn": 2094,
+    "tp": 16993
+  },
+  "share_probabilities_below_0.05_or_above_0.95": 0.7112727673962217,
+  "student_test_observations_with_candidates": 19160,
+  "cv_macro_f1_std_sample_ddof1": 0.06475827205112422
+}
