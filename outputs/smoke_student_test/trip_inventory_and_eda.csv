@@ -1,2 +1,0 @@
-trip_id,partition,valid,track_rows,node_rows,arc_rows,route_rows,missing_values,non_increasing_timestamps,gaps_over_10_seconds,median_dt_s,max_dt_s,track_lon_min,track_lon_max,track_lat_min,track_lat_max,isolated_nodes,weak_components,zero_length_arcs,validation_errors,validation_warnings
-00000000,student_test,True,2503,8542,18196,179,0,0,0,1.0,2.0,54.248491,54.963519,56.08056,56.254566,0,100,0,,

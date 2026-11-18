@@ -1,2 +1,0 @@
-trip_id,partition,valid,track_rows,node_rows,arc_rows,route_rows,missing_values,non_increasing_timestamps,gaps_over_10_seconds,median_dt_s,max_dt_s,track_lon_min,track_lon_max,track_lat_min,track_lat_max,isolated_nodes,weak_components,zero_length_arcs,validation_errors,validation_warnings
-00000001,train,True,1315,88809,165790,525,0,0,1,1.0,16.0,8.570524,8.64786,49.844053,50.211882,0,175,8,,1 timestamp gap(s) exceed 10 seconds

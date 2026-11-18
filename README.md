@@ -33,3 +33,7 @@ python scripts/run_phase1.py --data-root "data/Student folder" --partitions stud
 6. Export candidate-level spatial, directional, temporal, and road-connectivity features.
 
 `.route` is used only to derive permitted training and evaluation labels. It is not an inference feature.
+
+## Team model folders
+
+Each model must read the same candidate tables created by this pipeline. The completed Random Forest work is under `models/random_forest/`. Gaussian Naive Bayes is under `models/gaussian_nb/`.

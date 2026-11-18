@@ -1,2 +1,0 @@
-trip_id,observations,observations_with_candidates,candidate_rows,labelled_observations,candidate_miss_rate,reference_alignment_distance_median,reference_alignment_distance_max
-00000001,1315,1315,10492,1313,0.001520912547528508,4.291448814003752,27.230612822390274
