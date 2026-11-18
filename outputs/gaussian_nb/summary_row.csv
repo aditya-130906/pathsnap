@@ -1,0 +1,2 @@
+model_name,algorithm_family,cv_macro_f1,student_test_macro_f1,student_test_top1_accuracy,candidate_miss_rate,precision,recall,log_loss,training_time_s,inference_time_s,hyperparameters
+GaussianNaiveBayes,probabilistic generative classifier,0.7610046919033793,0.7851232060010525,0.7839248434237995,0.003810020876826692,0.5215296320166958,0.8902918216587206,0.5095797145312958,0.8710265999980038,0.06626799999503419,"{""variance_smoothing"": 0.0001}"

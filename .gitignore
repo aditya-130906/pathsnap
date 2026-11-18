@@ -8,3 +8,5 @@ materials/
 work/
 outputs/full_*/
 outputs/gaussian_nb_smoke/
+outputs/parallel_smoke/
+outputs/*/candidate_features.csv

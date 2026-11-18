@@ -1,0 +1,642 @@
+[
+  {
+    "trip_id": "00000001",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000002",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "41 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000003",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000004",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "215 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000005",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000006",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "5 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000008",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000010",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000011",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000012",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000013",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000014",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "5 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000016",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000018",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000019",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000020",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000021",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "2 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000022",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "9 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000024",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "2 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000025",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000026",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "23 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000027",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000028",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "6 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000029",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000031",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000032",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "7 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000033",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000034",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "2 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000035",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000036",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000037",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "8 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000038",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "3 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000039",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000041",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000042",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "37 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000043",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "3 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000044",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "2 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000045",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000046",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "11 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000047",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000048",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000050",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000051",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000053",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000054",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "6 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000055",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000057",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000058",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "5 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000060",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "3 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000061",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000062",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "19 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000063",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000064",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000066",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000068",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000069",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "2 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000070",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000071",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000072",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000074",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "7 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000075",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000078",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "25 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000079",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000080",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "7 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000081",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "86 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000082",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000083",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000084",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "4 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000085",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "5 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000086",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000088",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "9 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000089",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "12 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000090",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "6 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000092",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000093",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000095",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000096",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000097",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "trip_id": "00000098",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "5 timestamp gap(s) exceed 10 seconds"
+    ]
+  },
+  {
+    "trip_id": "00000099",
+    "partition": "train",
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "1 timestamp gap(s) exceed 10 seconds"
+    ]
+  }
+]

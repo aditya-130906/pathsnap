@@ -37,3 +37,7 @@ python scripts/run_phase1.py --data-root "data/Student folder" --partitions stud
 ## Team model folders
 
 Each model must read the same candidate tables created by this pipeline. The completed Random Forest work is under `models/random_forest/`. Gaussian Naive Bayes is under `models/gaussian_nb/`.
+
+## Gaussian Naive Bayes full run
+
+The committed Gaussian NB result uses 80 training trips, five-fold group-aware cross-validation, and 10 student-test trips. The actual summary, fold results, trained model bundle, and candidate probabilities are in `outputs/gaussian_nb/`. Generated full candidate tables are excluded because they are reproducible from the supplied raw data and too large for the repository.
