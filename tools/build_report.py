@@ -1,6 +1,6 @@
 """Build the technical report PDF and the accuracy-progression plot from committed result files.
 
-Usage: python tools/build_report.py  -> outputs/report/PathSnap_Technical_Report.pdf, outputs/report/accuracy_progression.png
+Usage: python tools/build_report.py  -> outputs/report/PathSnap_Previous_System_Report.pdf, outputs/report/accuracy_progression.png
 Every number in the report is read from a JSON/CSV produced by the pipeline; none is typed in by hand.
 """
 
@@ -205,9 +205,9 @@ def main():
       f"two-laptop FastAPI/Folium deployment. Top-1 rose from {base_vit['hgb_top1_accuracy']:.2%} (original HGB) to "
       f"{final['viterbi_top1_accuracy']:.2%} (original HGB + direction-aware HMM v3 tuned on out-of-fold train emissions) on the same held-out denominator, and reconstructed routes "
       f"became far more coherent (route F1 {base_vit['hgb_route_f1_mean']:.3f} → {final['viterbi_route_f1_mean']:.3f}).")
-    SimpleDocTemplate(str(out / "PathSnap_Technical_Report.pdf"), pagesize=A4, leftMargin=1.8 * cm, rightMargin=1.8 * cm,
+    SimpleDocTemplate(str(out / "PathSnap_Previous_System_Report.pdf"), pagesize=A4, leftMargin=1.8 * cm, rightMargin=1.8 * cm,
                       topMargin=1.5 * cm, bottomMargin=1.5 * cm, title="PathSnap Technical Report").build(story)
-    print("report written:", out / "PathSnap_Technical_Report.pdf")
+    print("report written:", out / "PathSnap_Previous_System_Report.pdf")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,12 @@ GPS track ──► projection to metres ──► candidate arcs ──► feat
                                           (no .route)                  P(true arc)    connectivity
 ```
 
+## Final technical report
+
+**[Open the team's final report: A-G03_PathSnap_Report.pdf](https://github.com/aditya-130906/pathsnap/blob/main/A-G03_PathSnap_Report.pdf)** (Team A-G03 final submission; a copy is at `outputs/report/A-G03_PathSnap_Report.pdf`).
+
+> `outputs/report/PathSnap_Previous_System_Report.pdf` is an older report on the earlier system, kept for reference only.
+
 ---
 
 ## Final system (deployed)
@@ -47,7 +53,7 @@ Secondary metric (direction-corrected labels, 814 labels changed, see below): HG
   Tuned model: `models/histogram_gradient_boosting/hgb_model_tuned.joblib`; history in `outputs/histogram_gradient_boosting/optuna/`.
 - HMM v1 tuning (in-sample emissions): Optuna TPE on 14 train trips, 30 trials; config `outputs/hmm_viterbi/tuning/best_hmm_config.json`.
 - Five-model comparison (with pipeline and denominator notes): `outputs/comparison/model_comparison.md`.
-- Technical report: `outputs/report/PathSnap_Technical_Report.pdf`. Route maps: `outputs/hmm_viterbi/maps/`.
+- Earlier system report (previous version, not the final submission): `outputs/report/PathSnap_Previous_System_Report.pdf`. Route maps: `outputs/hmm_viterbi/maps/`.
 - Two-laptop setup, firewall and demo script: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Run the deployed system
@@ -278,8 +284,6 @@ models/
   random_forest/                   train_rf.py, config.json, README.md           (Akshat)
   knn/                             planned                                       (Akshat)
   histogram_gradient_boosting/     train_hgb.py, predict_hgb.py, preprocessing/  (Aayaan)
-notebooks/
-  LogisticRegression_Colab.ipynb   Colab: clone, upload dataset, build features, train LR
 src/, scripts/                     Phase 1 pipeline (run_phase1.py)
 tests/
   test_pathsnap.py                 package and LR training-loop tests
@@ -311,7 +315,7 @@ The pipeline runs inside each fold, fitted on that fold's training trips only:
 - median imputer, then `StandardScaler`;
 - `LogisticRegression` (L2, C = 1, lbfgs).
 
-Class imbalance (about 14% positives) is handled with balanced sample weights. Use `--backend numpy` where scikit-learn is unavailable; it fits the same objective. For Colab, open `notebooks/LogisticRegression_Colab.ipynb`, run once with `SMOKE = True`, then with `False`. A full run takes about 3–6 minutes for features and 3–8 minutes for training, with peak memory around 2 GB.
+Class imbalance (about 14% positives) is handled with balanced sample weights. Use `--backend numpy` where scikit-learn is unavailable; it fits the same objective. A full run takes about 3–6 minutes for features and 3–8 minutes for training, with peak memory around 2 GB.
 
 ### 3. Random Forest (Phase 1 pipeline)
 
