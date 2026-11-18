@@ -34,13 +34,15 @@ def main():
     opt = J("histogram_gradient_boosting/optuna/optuna_summary.json")
     hmm_tune = J("hmm_viterbi/tuning/tuning_summary.json")
     hmm_tune_final = J("hmm_viterbi/tuning_tuned_hgb/tuning_summary.json")
-    base_vit = J("hmm_viterbi/student_test_original_hgb_viterbi/summary.json")   # FINAL: original HGB + tuned HMM
+    v1 = J("hmm_viterbi/student_test_original_hgb_viterbi/summary.json")          # original HGB + HMM v1
+    base_vit = J("hmm_viterbi/student_test_v3_oof/summary.json")                   # DEPLOYED: original HGB + HMM v3
+    hmm_v3 = J("hmm_viterbi/tuning_v3_oof/tuning_summary.json")
     tvit = J("hmm_viterbi/student_test_tuned_hgb_viterbi/summary.json")     # tuned HGB + HMM tuned for it
     final = base_vit
     prog = [("Original HGB\n(Aayaan)", base_vit["hgb_top1_accuracy"]),
             ("Optuna-tuned HGB", opt["student_test"]["tuned"]["student_test_top1_accuracy"]),
-            ("Tuned HGB\n+ HMM/Viterbi", tvit["viterbi_top1_accuracy"]),
-            ("Original HGB\n+ HMM/Viterbi\n(deployed)", base_vit["viterbi_top1_accuracy"])]
+            ("Original HGB\n+ HMM v1", v1["viterbi_top1_accuracy"]),
+            ("Original HGB\n+ HMM v3\n(deployed)", base_vit["viterbi_top1_accuracy"])]
     fig, ax = plt.subplots(figsize=(9, 4.2))
     bars = ax.bar([p[0] for p in prog], [p[1] for p in prog], color=["#9aa5b1", "#4e79a7", "#76b7b2", "#1b9e77"])
     for b, (_, v) in zip(bars, prog):
@@ -149,10 +151,10 @@ def main():
       "+ part of the next arc (same-arc and adjacent cases exact) and β growing with elapsed time; unreachable pairs get a "
       "fixed large penalty; time gaps over 60 s or jumps over 1.5 km make that step's transitions neutral. Viterbi in log "
       "space with back-pointers; the decoded arcs are joined by shortest connecting paths into a route.")
-    tf = hmm_tune
+    tf = hmm_v3
     p(f"HMM parameters tuned by Optuna TPE on {len(tf['tuning_trips'])} train trips ({tf['eligible_tuning_observations']:,} "
       f"eligible observations; student_test unused): train Top-1 {tf['default_score']:.4f} → {tf['best_score']:.4f}. Best: "
-      + ", ".join(f"{k} = {v:.3f}" for k, v in tf["best_params"].items()) + ". Emissions on train trips are in-sample.")
+      + ", ".join(f"{k} = {v:.3f}" for k, v in tf["best_params"].items()) + ". Emissions are out-of-fold (5-fold GroupKFold) HGB probabilities on train trips.")
     story.append(PageBreak())
     h("11–12. Route reconstruction and results")
     img("outputs/report/accuracy_progression.png")
@@ -160,8 +162,19 @@ def main():
            ["Original HGB", f"{base_vit['hgb_top1_accuracy']:.4f}", f"{base_vit['hgb_route_continuity']:.4f}", f"{base_vit['hgb_route_f1_mean']:.4f}"],
            ["Optuna-tuned HGB", f"{tvit['hgb_top1_accuracy']:.4f}", f"{tvit['hgb_route_continuity']:.4f}", f"{tvit['hgb_route_f1_mean']:.4f}"],
            ["Tuned HGB + Viterbi", f"{tvit['viterbi_top1_accuracy']:.4f}", f"{tvit['viterbi_route_continuity']:.4f}", f"{tvit['viterbi_route_f1_mean']:.4f}"],
-           ["Original HGB + Viterbi (deployed)", f"{base_vit['viterbi_top1_accuracy']:.4f}", f"{base_vit['viterbi_route_continuity']:.4f}", f"{base_vit['viterbi_route_f1_mean']:.4f}"]])
-    p("Deployment choice was made on TRAIN trips, not on student_test: the HMM tuning objective (post-Viterbi Top-1 on "
+           ["Original HGB + HMM v1", f"{v1['viterbi_top1_accuracy']:.4f}", f"{v1['viterbi_route_continuity']:.4f}", f"{v1['viterbi_route_f1_mean']:.4f}"],
+           ["Original HGB + HMM v3 (deployed)", f"{base_vit['viterbi_top1_accuracy']:.4f}", f"{base_vit['viterbi_route_continuity']:.4f}", f"{base_vit['viterbi_route_f1_mean']:.4f}"]])
+    dc = base_vit["secondary_direction_corrected_labels"]
+    p(f"Error analysis of HMM v1 showed that about 60% of its errors chose the opposite-direction twin of the correct "
+      f"road. HMM v3 therefore (a) allows only a small backward movement along an arc, (b) penalises U-turns onto the twin "
+      f"arc, (c) adds a heading-agreement emission term, and (d) is tuned by Optuna on OUT-OF-FOLD train emissions "
+      f"(5-fold GroupKFold HGB), which resemble unseen trips, instead of over-confident in-sample ones "
+      f"({len(hmm_v3['tuning_trips'])} train trips, {hmm_v3['trials']} trials). Half of the remaining direction errors occur "
+      f"where the reference route contains both directions, where the nearest-arc proxy label is arbitrary. As a clearly "
+      f"separate SECONDARY metric, labels that point against a reliable GPS heading while their twin is on the route are "
+      f"corrected ({dc['labels_changed']} labels): HMM v3 Top-1 is then {dc['viterbi_top1_accuracy']:.2%} (HGB-only "
+      f"{dc['hgb_top1_accuracy']:.2%}). The primary metric above uses the original labels unchanged.")
+    p("HMM v1/v2 choice between original and tuned HGB was made on TRAIN trips: the HMM tuning objective (post-Viterbi Top-1 on "
       f"train tuning trips) was {hmm_tune['best_score']:.4f} with the original HGB vs {hmm_tune_final['best_score']:.4f} with the "
       "Optuna-tuned HGB, so the original HGB + its tuned HMM is deployed. The held-out results agree. The tuned HGB is a "
       "better standalone classifier (+0.35 points Top-1) but its probabilities combine less well with the transition model.")
@@ -190,7 +203,7 @@ def main():
     h("17. Conclusion")
     p(f"A complete, reproducible pipeline: HGB candidate scoring, Bayesian optimisation, HMM/Viterbi reconstruction and a "
       f"two-laptop FastAPI/Folium deployment. Top-1 rose from {base_vit['hgb_top1_accuracy']:.2%} (original HGB) to "
-      f"{final['viterbi_top1_accuracy']:.2%} (original HGB + Optuna-tuned HMM/Viterbi, selected on train) on the same held-out denominator, and reconstructed routes "
+      f"{final['viterbi_top1_accuracy']:.2%} (original HGB + direction-aware HMM v3 tuned on out-of-fold train emissions) on the same held-out denominator, and reconstructed routes "
       f"became far more coherent (route F1 {base_vit['hgb_route_f1_mean']:.3f} → {final['viterbi_route_f1_mean']:.3f}).")
     SimpleDocTemplate(str(out / "PathSnap_Technical_Report.pdf"), pagesize=A4, leftMargin=1.8 * cm, rightMargin=1.8 * cm,
                       topMargin=1.5 * cm, bottomMargin=1.5 * cm, title="PathSnap Technical Report").build(story)

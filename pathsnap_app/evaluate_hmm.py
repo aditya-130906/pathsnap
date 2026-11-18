@@ -39,7 +39,8 @@ def decode_trip(df: pd.DataFrame, trip, cfg: HMMConfig):
     starts = np.r_[0, np.flatnonzero(obs[1:] != obs[:-1]) + 1, len(obs)]
     oids = obs[starts[:-1]]
     arc, frac, prob = df.candidate_arc_id.to_numpy(), df.projected_fraction.to_numpy(), df.prob.to_numpy()
-    cands = [dict(arc=arc[s:e], frac=frac[s:e], prob=prob[s:e]) for s, e in zip(starts[:-1], starts[1:])]
+    hd, hr = df.heading_difference_deg.to_numpy(), df.has_reliable_heading.to_numpy()
+    cands = [dict(arc=arc[s:e], frac=frac[s:e], prob=prob[s:e], hdiff=hd[s:e], hrel=hr[s:e]) for s, e in zip(starts[:-1], starts[1:])]
     gps = g.project(trip.track[oids, :2]); times = trip.track[oids, 2]
     path = viterbi(cands, gps, times, g, cfg)
     vit = np.array([c["arc"][k] for c, k in zip(cands, path)])
@@ -65,23 +66,40 @@ def evaluate(features: Path, dataset: Path, partition: str, cfg: HMMConfig, trip
         elig = d.groupby("observation_index").label_valid.max().reindex(oids).fillna(0).to_numpy().astype(bool)
         truth = lab.reindex(oids).to_numpy()
         hgb_ok = (hgb == truth) & elig; vit_ok = (vit == truth) & elig
+        # SECONDARY metric: direction-corrected proxy labels. When the reference route contains both directions of a
+        # road, the nearest-arc proxy picks between two equally near arcs arbitrarily. If the GPS heading is reliable
+        # and the label arc points against the motion (>90 deg) while its reverse twin is on the route, use the twin.
+        twin_of = {(int(u), int(v)): k for k, (u, v) in enumerate(trip.arcs)}
+        route_set = set(int(x) for x in trip.route)
+        lab_h = d[d.label == 1].set_index("observation_index").heading_difference_deg.reindex(oids).to_numpy()
+        rel = d.groupby("observation_index").has_reliable_heading.max().reindex(oids).to_numpy() > 0
+        truth_dc = truth.copy(); n_fix = 0
+        for i in np.flatnonzero(elig & rel & ~np.isnan(truth)):
+            u, v = trip.arcs[int(truth[i])]
+            tw = twin_of.get((int(v), int(u)))
+            if tw is not None and tw in route_set and lab_h[i] > 90:
+                truth_dc[i] = tw; n_fix += 1
+        hgb_dc = (hgb == truth_dc) & elig; vit_dc = (vit == truth_dc) & elig
         r_h = route_overlap(reconstruct_route(g, list(hgb)), trip.route, g.length)
         r_v = route_overlap(reconstruct_route(g, list(vit)), trip.route, g.length)
         per_trip.append(dict(trip_id=tid, observations=len(oids), eligible=int(elig.sum()),
                              hgb_top1=hgb_ok.sum() / max(elig.sum(), 1), viterbi_top1=vit_ok.sum() / max(elig.sum(), 1),
                              hgb_continuity=continuity(g, hgb), viterbi_continuity=continuity(g, vit),
                              hgb_route_f1=r_h["route_f1"], viterbi_route_f1=r_v["route_f1"]))
-        rows.append((len(oids), elig.sum(), hgb_ok.sum(), vit_ok.sum()))
+        rows.append((len(oids), elig.sum(), hgb_ok.sum(), vit_ok.sum(), hgb_dc.sum(), vit_dc.sum(), n_fix))
         if verbose:
             p = per_trip[-1]
             print(f"{tid}: eligible {p['eligible']}/{p['observations']} HGB {p['hgb_top1']:.4f} -> Viterbi {p['viterbi_top1']:.4f} "
                   f"| continuity {p['hgb_continuity']:.3f} -> {p['viterbi_continuity']:.3f}", flush=True)
-    n, e, h, v = (int(sum(x)) for x in zip(*rows))
+    n, e, h, v, hdc, vdc, nfix = (int(sum(x)) for x in zip(*rows))
     pt = pd.DataFrame(per_trip)
     summary = {"partition": partition, "trips": len(pt), "observations": n, "eligible_observations": e,
                "ineligible_observations": n - e,
                "hgb_top1_accuracy": h / e, "viterbi_top1_accuracy": v / e,
                "hgb_correct": h, "viterbi_correct": v,
+               "secondary_direction_corrected_labels": {
+                   "labels_changed": nfix, "hgb_top1_accuracy": hdc / e, "viterbi_top1_accuracy": vdc / e,
+                   "rule": "label arc against reliable GPS heading (>90 deg) and its reverse twin on the route -> twin"},
                "hgb_route_continuity": float(pt.hgb_continuity.mean()), "viterbi_route_continuity": float(pt.viterbi_continuity.mean()),
                "hgb_route_f1_mean": float(pt.hgb_route_f1.mean()), "viterbi_route_f1_mean": float(pt.viterbi_route_f1.mean()),
                "decode_seconds": time.time() - t0, "hmm_config": cfg.to_dict(),

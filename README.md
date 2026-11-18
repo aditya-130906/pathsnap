@@ -23,18 +23,29 @@ reconstruction with Optuna-tuned parameters → FastAPI backend (Laptop 1) → F
 | --- | --- | --- | --- |
 | Original HGB | 80.76% | 0.890 | 0.685 |
 | Optuna-tuned HGB | 81.10% | | |
-| Tuned HGB + HMM/Viterbi | 87.71% | | |
-| **Original HGB + HMM/Viterbi (deployed)** | **88.78%** | **0.975** | **0.962** |
+| Tuned HGB + HMM v1 | 87.71% | 0.967 | 0.956 |
+| Original HGB + HMM v1 | 88.78% | 0.975 | 0.962 |
+| **Original HGB + HMM v3 (deployed)** | **89.30%** | **0.975** | **0.969** |
 
-- **The ~95% target was not reached.** The best verified held-out Top-1 is **88.78%**.
-  Remaining errors come mainly from the proxy labels (nearest route arc) at intersections and on parallel or two-way arcs,
-  off-route GPS stretches, and short stretches where Viterbi follows a parallel road.
-- The deployed combination was chosen on **train** trips (HMM tuning objective 0.9110 with the original HGB vs
-  0.8992 with the tuned HGB), not on student_test.
+Secondary metric (direction-corrected labels, 814 labels changed, see below): HGB 83.47%,
+**HGB + HMM v3 90.83%**.
+
+- **The ~95% target was not reached.** Best verified held-out Top-1: **89.30%** (original labels),
+  90.83% with direction-corrected labels.
+- **HMM v3** came from error analysis: ~60% of v1 errors picked the opposite-direction twin of the correct road. v3 allows
+  only small backward movement along an arc, penalises U-turns onto the twin, adds a heading-agreement emission term, and
+  is tuned by Optuna on **out-of-fold** train emissions (`pathsnap_app/oof_hgb.py`, 5-fold GroupKFold) instead of
+  over-confident in-sample ones (20 train trips, 40 trials; config
+  `outputs/hmm_viterbi/tuning_v3_oof/best_hmm_config.json`).
+- **Label noise:** about half of the remaining direction errors occur where the reference route contains both directions
+  of a road, so the nearest-arc proxy label is arbitrary there. The secondary metric replaces a label that points
+  against a reliable GPS heading (>90°) by its reverse twin when the twin is on the route; the primary metric is unchanged.
+- Remaining error sources: proxy-label ambiguity at arc boundaries and on two-way roads, off-route GPS stretches,
+  parallel roads, and slow/stopped observations without a reliable heading (21% error rate there vs 11% elsewhere).
 - HGB Bayesian optimisation: Optuna TPESampler(seed=42), 12 trials, GroupKFold(3) by trip_id over 40 random train trips; CV Top-1 0.7060 →
   0.7238. Best: learning_rate=0.0235, max_iter=100, max_leaf_nodes=25, max_depth=None, min_samples_leaf=54, l2_regularization=0.0618.
   Tuned model: `models/histogram_gradient_boosting/hgb_model_tuned.joblib`; history in `outputs/histogram_gradient_boosting/optuna/`.
-- HMM tuning: Optuna TPE on 14 train trips, 30 trials; config `outputs/hmm_viterbi/tuning/best_hmm_config.json`.
+- HMM v1 tuning (in-sample emissions): Optuna TPE on 14 train trips, 30 trials; config `outputs/hmm_viterbi/tuning/best_hmm_config.json`.
 - Five-model comparison (with pipeline and denominator notes): `outputs/comparison/model_comparison.md`.
 - Technical report: `outputs/report/PathSnap_Technical_Report.pdf`. Route maps: `outputs/hmm_viterbi/maps/`.
 - Two-laptop setup, firewall and demo script: [DEPLOYMENT.md](DEPLOYMENT.md).

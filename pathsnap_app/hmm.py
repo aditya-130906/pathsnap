@@ -35,6 +35,10 @@ class HMMConfig:
     jump_m: float = 1500.0
     search_extra_m: float = 300.0  # Dijkstra limit = 2 * GPS displacement + this
     search_cap_m: float = 5000.0
+    # direction handling (v2): the two directions of a two-way road share geometry
+    backtrack_tol_m: float = 1e9      # backward movement along the same arc tolerated as GPS jitter (v1: unlimited)
+    uturn_logp: float = 0.0           # extra log-penalty for switching to the reverse twin arc (v1: none)
+    w_head: float = 0.0               # emission weight of heading agreement, w_head * (cos(diff) - 1) / 2 (v1: none)
 
     def to_dict(self):
         return asdict(self)
@@ -93,10 +97,13 @@ class RoadGraph:
         return out[::-1]
 
 
-def route_distance(g: RoadGraph, a: int, fa: float, b: int, fb: float, limit: float) -> float:
+def route_distance(g: RoadGraph, a: int, fa: float, b: int, fb: float, limit: float, backtrack_tol_m: float = 1e9) -> float:
     la, lb = g.length[a], g.length[b]
     if a == b:
-        return abs(fb - fa) * la                       # backward jitter on the same arc treated as noise
+        back = (fa - fb) * la
+        if back <= 0:
+            return -back                                # forward along the same arc
+        return back if back <= backtrack_tol_m else np.inf   # small backward jitter only; larger = impossible
     head = (1 - fa) * la
     s, t = int(g.arcs[a, 1]), int(g.arcs[b, 0])
     if s == t:
@@ -109,7 +116,12 @@ def route_distance(g: RoadGraph, a: int, fa: float, b: int, fb: float, limit: fl
 def viterbi(obs_cands: list[dict], gps_xy: np.ndarray, times: np.ndarray, g: RoadGraph, cfg: HMMConfig):
     """obs_cands[t] = dict(arc=int array, frac=float array, prob=float array). Returns chosen candidate index per t."""
     T = len(obs_cands)
-    log_e = [cfg.w_emit * np.log(np.clip(c["prob"], 1e-6, 1.0)) for c in obs_cands]
+    log_e = []
+    for c in obs_cands:
+        e = cfg.w_emit * np.log(np.clip(c["prob"], 1e-6, 1.0))
+        if cfg.w_head and "hdiff" in c:
+            e = e + np.where(c["hrel"] > 0, cfg.w_head * (np.cos(np.radians(c["hdiff"])) - 1) / 2, 0.0)
+        log_e.append(e)
     delta = log_e[0].copy()
     back = [np.zeros(len(log_e[0]), np.int64)]
     for t in range(1, T):
@@ -124,8 +136,10 @@ def viterbi(obs_cands: list[dict], gps_xy: np.ndarray, times: np.ndarray, g: Roa
             trans = np.empty((len(A["arc"]), len(B["arc"])))
             for i, (a, fa) in enumerate(zip(A["arc"], A["frac"])):
                 for j, (b, fb) in enumerate(zip(B["arc"], B["frac"])):
-                    d = route_distance(g, int(a), float(fa), int(b), float(fb), limit)
+                    d = route_distance(g, int(a), float(fa), int(b), float(fb), limit, cfg.backtrack_tol_m)
                     trans[i, j] = cfg.unreachable_logp if not np.isfinite(d) else -abs(d - gdist) / beta
+                    if cfg.uturn_logp and a != b and g.arcs[a, 0] == g.arcs[b, 1] and g.arcs[a, 1] == g.arcs[b, 0]:
+                        trans[i, j] += cfg.uturn_logp
         scores = delta[:, None] + trans
         back.append(np.argmax(scores, axis=0))
         delta = scores[back[-1], np.arange(scores.shape[1])] + log_e[t]

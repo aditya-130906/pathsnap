@@ -32,7 +32,7 @@ from pathsnap_app.hmm import HMMConfig, RoadGraph, viterbi  # noqa: E402
 MODEL = ROOT / "models" / "histogram_gradient_boosting" / "hgb_model.joblib"
 
 
-def prepare(features: Path, dataset: Path, n_trips: int, max_obs: int, seed: int):
+def prepare(features: Path, dataset: Path, n_trips: int, max_obs: int, seed: int, oof: Path | None = None):
     df = pd.read_csv(features, dtype={"trip_id": str})
     model, names, _ = load_hgb(MODEL)
     sizes = df.groupby("trip_id").observation_index.nunique()
@@ -40,7 +40,12 @@ def prepare(features: Path, dataset: Path, n_trips: int, max_obs: int, seed: int
     pool = sorted(sizes[sizes <= max_obs].index)
     trips = sorted(rng.choice(pool, size=min(n_trips, len(pool)), replace=False))
     df = df[df.trip_id.isin(trips)].copy()
-    df["prob"] = model.predict_proba(df[names].to_numpy(np.float32))[:, 1]
+    if oof is not None:      # out-of-fold probabilities (realistic emissions for unseen trips)
+        o = pd.read_csv(oof, dtype={"trip_id": str})
+        df = df.merge(o, on=["trip_id", "observation_index", "candidate_arc_id"], how="left")
+        assert df.prob.notna().all()
+    else:
+        df["prob"] = model.predict_proba(df[names].to_numpy(np.float32))[:, 1]
     data = []
     for tid, d in df.groupby("trip_id"):
         trip = load_trip(dataset, "train", tid, include_reference=False)
@@ -50,7 +55,8 @@ def prepare(features: Path, dataset: Path, n_trips: int, max_obs: int, seed: int
         st = np.r_[0, np.flatnonzero(obs[1:] != obs[:-1]) + 1, len(obs)]
         oids = obs[st[:-1]]
         a, f, p = d.candidate_arc_id.to_numpy(), d.projected_fraction.to_numpy(), d.prob.to_numpy()
-        cands = [dict(arc=a[s:e], frac=f[s:e], prob=p[s:e]) for s, e in zip(st[:-1], st[1:])]
+        hd, hr = d.heading_difference_deg.to_numpy(), d.has_reliable_heading.to_numpy()
+        cands = [dict(arc=a[s:e], frac=f[s:e], prob=p[s:e], hdiff=hd[s:e], hrel=hr[s:e]) for s, e in zip(st[:-1], st[1:])]
         truth = d[d.label == 1].set_index("observation_index").candidate_arc_id.reindex(oids).to_numpy()
         elig = d.groupby("observation_index").label_valid.max().reindex(oids).fillna(0).to_numpy().astype(bool)
         data.append((tid, g, cands, g.project(trip.track[oids, :2]), trip.track[oids, 2], truth, elig))
@@ -75,12 +81,13 @@ def main():
     p.add_argument("--n-trips", type=int, default=16)
     p.add_argument("--max-obs", type=int, default=3000)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--oof", type=Path, default=None, help="CSV of out-of-fold train probabilities (pathsnap_app.oof_hgb)")
     p.add_argument("--model", type=Path, default=MODEL, help="HGB joblib bundle")
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
     MODEL = a.model
     a.output.mkdir(parents=True, exist_ok=True)
-    trips, data = prepare(a.features, a.dataset, a.n_trips, a.max_obs, a.seed)
+    trips, data = prepare(a.features, a.dataset, a.n_trips, a.max_obs, a.seed, a.oof)
     print("tuning trips:", trips, flush=True)
     base = HMMConfig()
     t0 = time.time(); base_score = score(data, base)
@@ -90,13 +97,19 @@ def main():
         cfg = HMMConfig(w_emit=trial.suggest_float("w_emit", 0.2, 4.0, log=True),
                         beta_m=trial.suggest_float("beta_m", 1.0, 60.0, log=True),
                         beta_per_s=trial.suggest_float("beta_per_s", 0.0, 10.0),
-                        unreachable_logp=trial.suggest_float("unreachable_logp", -80.0, -5.0))
+                        unreachable_logp=trial.suggest_float("unreachable_logp", -80.0, -5.0),
+                        backtrack_tol_m=trial.suggest_float("backtrack_tol_m", 1.0, 40.0, log=True),
+                        uturn_logp=trial.suggest_float("uturn_logp", -30.0, 0.0),
+                        w_head=trial.suggest_float("w_head", 0.0, 8.0))
         return score(data, cfg)
 
     study = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=a.seed),
                                 study_name="hmm_viterbi")
-    study.enqueue_trial({"w_emit": base.w_emit, "beta_m": base.beta_m, "beta_per_s": base.beta_per_s,
-                         "unreachable_logp": base.unreachable_logp})
+    prev = Path(ROOT / "outputs" / "hmm_viterbi" / "tuning" / "best_hmm_config.json")
+    seed_cfg = json.loads(prev.read_text()) if prev.exists() else base.to_dict()
+    for extra in ({"backtrack_tol_m": 10.0, "uturn_logp": -10.0, "w_head": 2.0},
+                  {"backtrack_tol_m": 5.0, "uturn_logp": -20.0, "w_head": 4.0}):
+        study.enqueue_trial({k: seed_cfg[k] for k in ("w_emit", "beta_m", "beta_per_s", "unreachable_logp")} | extra)
     t0 = time.time()
     study.optimize(objective, n_trials=a.trials, show_progress_bar=False,
                    callbacks=[lambda s, t: print(f"trial {t.number}: {t.value:.4f} best {s.best_value:.4f}", flush=True)])
@@ -110,7 +123,7 @@ def main():
         "objective": "post-Viterbi Top-1 over label-eligible observations of the tuning train trips",
         "default_score": base_score, "best_score": study.best_value, "best_params": study.best_params,
         "seconds": time.time() - t0,
-        "note": "emissions are in-sample HGB probabilities (final model fitted on all train trips)"}, indent=2) + "\n")
+        "note": ("emissions: out-of-fold HGB probabilities (GroupKFold 5 by trip)" if a.oof else "emissions are in-sample HGB probabilities (final model fitted on all train trips)")}, indent=2) + "\n")
     print("best", study.best_value, study.best_params)
 
 

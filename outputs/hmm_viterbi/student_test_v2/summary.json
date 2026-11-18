@@ -1,0 +1,30 @@
+{
+  "partition": "student_test",
+  "trips": 10,
+  "observations": 19160,
+  "eligible_observations": 19018,
+  "ineligible_observations": 142,
+  "hgb_top1_accuracy": 0.8075507414028815,
+  "viterbi_top1_accuracy": 0.8933641813019245,
+  "hgb_correct": 15358,
+  "viterbi_correct": 16990,
+  "hgb_route_continuity": 0.8901524637883089,
+  "viterbi_route_continuity": 0.9711634988619566,
+  "hgb_route_f1_mean": 0.6848174237760484,
+  "viterbi_route_f1_mean": 0.9100785804359255,
+  "decode_seconds": 23.725773572921753,
+  "hmm_config": {
+    "w_emit": 1.5995860836582205,
+    "beta_m": 1.8161388119980038,
+    "beta_per_s": 4.684672317744205,
+    "unreachable_logp": -11.151674733834547,
+    "gap_s": 60.0,
+    "jump_m": 1500.0,
+    "search_extra_m": 300.0,
+    "search_cap_m": 5000.0,
+    "backtrack_tol_m": 10.94323114141873,
+    "uturn_logp": -29.18690577995401,
+    "w_head": 2.3567385075608795
+  },
+  "denominator": "label-eligible observations (HGB proxy labels: GPS within 30 m of a reference-route arc)"
+}

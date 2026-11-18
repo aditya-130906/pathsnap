@@ -31,11 +31,11 @@ from pathsnap_app.hmm import HMMConfig, RoadGraph, continuity, reconstruct_route
 
 _TUNED = ROOT / "models" / "histogram_gradient_boosting" / "hgb_model_tuned.joblib"
 _ORIGINAL = ROOT / "models" / "histogram_gradient_boosting" / "hgb_model.joblib"
-# Deployed: original HGB + HMM tuned for it. Selected on TRAIN trips (HMM tuning objective 0.911 vs 0.899 for the
-# Optuna-tuned HGB + its HMM); student_test was not used to choose. Override with PATHSNAP_MODEL / PATHSNAP_HMM_CONFIG.
+# Deployed: original HGB + HMM v3 (direction-aware transitions, tuned by Optuna on out-of-fold train emissions).
+# Override with PATHSNAP_MODEL / PATHSNAP_HMM_CONFIG.
 MODEL_PATH = Path(os.environ.get("PATHSNAP_MODEL", _ORIGINAL))
 SCHEMA_PATH = ROOT / "models" / "histogram_gradient_boosting" / "feature_schema.json"
-HMM_CONFIG_PATH = Path(os.environ.get("PATHSNAP_HMM_CONFIG", ROOT / "outputs" / "hmm_viterbi" / "tuning" / "best_hmm_config.json"))
+HMM_CONFIG_PATH = Path(os.environ.get("PATHSNAP_HMM_CONFIG", ROOT / "outputs" / "hmm_viterbi" / "tuning_v3_oof" / "best_hmm_config.json"))
 CANDIDATE_TOP_K, CANDIDATE_RADIUS_M = 8, 150.0          # must match the HGB training run
 TRIP_ID_CHARS = set("0123456789")
 
@@ -127,7 +127,8 @@ class Engine:
         st = np.r_[0, np.flatnonzero(obs[1:] != obs[:-1]) + 1, len(obs)]
         oids = obs[st[:-1]]
         a, f, p = df.candidate_arc_id.to_numpy(), df.projected_fraction.to_numpy(), df.prob.to_numpy()
-        cands = [dict(arc=a[s:e], frac=f[s:e], prob=p[s:e]) for s, e in zip(st[:-1], st[1:])]
+        hd, hr = df.heading_difference_deg.to_numpy(), df.has_reliable_heading.to_numpy()
+        cands = [dict(arc=a[s:e], frac=f[s:e], prob=p[s:e], hdiff=hd[s:e], hrel=hr[s:e]) for s, e in zip(st[:-1], st[1:])]
         path = viterbi(cands, g.project(trip.track[oids, :2]), trip.track[oids, 2], g, self.hmm_config)
         vit = np.array([c["arc"][k] for c, k in zip(cands, path)])
         hgb = np.array([c["arc"][int(np.argmax(c["prob"]))] for c in cands])
