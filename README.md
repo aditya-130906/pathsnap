@@ -99,6 +99,7 @@ pathsnap/                 canonical shared preprocessing package (see above)
 models/
   logistic_regression/    train_logreg.py + config.json (Akshansh)
   random_forest/          train_rf.py + config.json (Akshat; uses the Phase 1 features)
+  histogram_gradient_boosting/   train_hgb.py, predict_hgb.py, trained model, own preprocessing (Aayaan; see its README)
 notebooks/
   LogisticRegression_Colab.ipynb   Colab: clone, upload dataset, build features, train and evaluate LR
 tests/
@@ -156,6 +157,10 @@ It loads and validates the four files, projects to local metres, builds directed
 The Gaussian NB full run used the Phase 1 pipeline: 80 m radius, at most 8 candidates, 80 training trips, five-fold group-aware cross-validation, and 10 student-test trips. It achieved CV Macro F1 of 0.7610, student-test Macro F1 of 0.7851, and student-test Top-1 accuracy of 0.7839. Its actual model bundle, folds, summary, and candidate probabilities are under `outputs/gaussian_nb/`.
 
 This result must be rerun through `pathsnap/` if the team adopts that pipeline as the shared canonical feature builder. Do not compare it directly with models trained from `outputs/features/`.
+
+## HistGradientBoostingClassifier result (HGB-run pipeline)
+
+Aayaan's HGB full run (5-fold `GroupKFold`, 80 train trips, 10 student-test trips) reached CV macro F1 0.8633, student-test macro F1 0.8798 and student-test Top-1 accuracy 0.8076 (over proxy-label-eligible observations). It used its own candidate/label builder (150 m, top 8 candidates, 18 features), vendored under `models/histogram_gradient_boosting/preprocessing/`, so it is not directly comparable with the other pipelines. Model, code and README: `models/histogram_gradient_boosting/`; results: `outputs/histogram_gradient_boosting/`.
 
 The smoke comparison in `outputs/smoke_model_comparison.csv` used one training trip and one student-test trip only; it is not model-selection evidence.
 

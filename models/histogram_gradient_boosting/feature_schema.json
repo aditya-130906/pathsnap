@@ -1,0 +1,53 @@
+{
+  "model_input_features": [
+    "candidate_rank",
+    "candidate_count",
+    "distance_to_road_m",
+    "distance_to_start_m",
+    "distance_to_end_m",
+    "segment_length_m",
+    "projected_fraction",
+    "heading_difference_deg",
+    "gps_heading_deg",
+    "road_bearing_deg",
+    "gps_step_distance_m",
+    "gps_speed_mps",
+    "timestamp_delta_s",
+    "has_reliable_heading",
+    "large_time_gap",
+    "speed_was_clipped",
+    "outside_search_radius",
+    "connects_from_previous_candidates"
+  ],
+  "dtypes": {
+    "candidate_rank": "float32",
+    "candidate_count": "float32",
+    "distance_to_road_m": "float32",
+    "distance_to_start_m": "float32",
+    "distance_to_end_m": "float32",
+    "segment_length_m": "float32",
+    "projected_fraction": "float32",
+    "heading_difference_deg": "float32",
+    "gps_heading_deg": "float32",
+    "road_bearing_deg": "float32",
+    "gps_step_distance_m": "float32",
+    "gps_speed_mps": "float32",
+    "timestamp_delta_s": "float32",
+    "has_reliable_heading": "float32",
+    "large_time_gap": "float32",
+    "speed_was_clipped": "float32",
+    "outside_search_radius": "float32",
+    "connects_from_previous_candidates": "float32"
+  },
+  "excluded_fields": [
+    "trip_id",
+    "observation_index",
+    "timestamp_s",
+    "candidate_arc_id",
+    "label_valid",
+    "label",
+    "reference_arc_id",
+    "reference_alignment_distance_m"
+  ],
+  "preprocessing": "No fitted transformer; validated finite float32 features passed directly to HGB"
+}

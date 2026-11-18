@@ -1,0 +1,122 @@
+[
+  {
+    "partition": "student_test",
+    "trip_id": "00000000",
+    "observations": 2503,
+    "candidate_rows": 12952,
+    "eligible_observations": 2501,
+    "covered_eligible_observations": 2496,
+    "candidate_miss_rate": 0.0019992003198719965,
+    "alignment_distance_median": 6.045951841105663,
+    "alignment_distance_max": 36.092737210812395,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000007",
+    "observations": 1354,
+    "candidate_rows": 8052,
+    "eligible_observations": 1327,
+    "covered_eligible_observations": 1327,
+    "candidate_miss_rate": 0.0,
+    "alignment_distance_median": 4.511821880739529,
+    "alignment_distance_max": 36.81903715376752,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000009",
+    "observations": 1049,
+    "candidate_rows": 8384,
+    "eligible_observations": 1036,
+    "covered_eligible_observations": 1030,
+    "candidate_miss_rate": 0.00579150579150578,
+    "alignment_distance_median": 4.675431886240521,
+    "alignment_distance_max": 47.256988204614316,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000040",
+    "observations": 2995,
+    "candidate_rows": 18459,
+    "eligible_observations": 2946,
+    "covered_eligible_observations": 2946,
+    "candidate_miss_rate": 0.0,
+    "alignment_distance_median": 4.8592444690643735,
+    "alignment_distance_max": 43.61139467837741,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000052",
+    "observations": 262,
+    "candidate_rows": 2094,
+    "eligible_observations": 262,
+    "covered_eligible_observations": 262,
+    "candidate_miss_rate": 0.0,
+    "alignment_distance_median": 4.167401198611114,
+    "alignment_distance_max": 19.05925953306794,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000056",
+    "observations": 3958,
+    "candidate_rows": 31005,
+    "eligible_observations": 3920,
+    "covered_eligible_observations": 3904,
+    "candidate_miss_rate": 0.004081632653061273,
+    "alignment_distance_median": 4.504473769049015,
+    "alignment_distance_max": 106.01713860574048,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000065",
+    "observations": 768,
+    "candidate_rows": 6136,
+    "eligible_observations": 768,
+    "covered_eligible_observations": 763,
+    "candidate_miss_rate": 0.00651041666666663,
+    "alignment_distance_median": 4.375948266997958,
+    "alignment_distance_max": 21.76754718559298,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000076",
+    "observations": 1486,
+    "candidate_rows": 11888,
+    "eligible_observations": 1485,
+    "covered_eligible_observations": 1476,
+    "candidate_miss_rate": 0.0060606060606061,
+    "alignment_distance_median": 6.820798061159106,
+    "alignment_distance_max": 32.220230972374125,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000077",
+    "observations": 3911,
+    "candidate_rows": 31203,
+    "eligible_observations": 3899,
+    "covered_eligible_observations": 3898,
+    "candidate_miss_rate": 0.0002564760194921911,
+    "alignment_distance_median": 6.052278893493952,
+    "alignment_distance_max": 37.24759029019711,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  },
+  {
+    "partition": "student_test",
+    "trip_id": "00000091",
+    "observations": 874,
+    "candidate_rows": 6883,
+    "eligible_observations": 874,
+    "covered_eligible_observations": 874,
+    "candidate_miss_rate": 0.0,
+    "alignment_distance_median": 4.341165119173673,
+    "alignment_distance_max": 22.863846549758176,
+    "alignment_method": "nearest_route_arc_geometry_proxy"
+  }
+]
