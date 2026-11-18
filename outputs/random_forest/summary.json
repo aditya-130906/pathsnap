@@ -1,0 +1,62 @@
+{
+ "model_name": "RandomForest",
+ "algorithm_family": "Ensemble (bagged decision trees)",
+ "hyperparameters": {
+  "n_estimators": 150,
+  "max_depth": 20,
+  "min_samples_leaf": 10,
+  "max_features": "sqrt",
+  "max_samples": 0.25,
+  "bootstrap": true,
+  "class_weight": "balanced_subsample",
+  "criterion": "gini"
+ },
+ "features": [
+  "distance_to_arc_m",
+  "projection_fraction",
+  "arc_length_m",
+  "heading_difference_deg",
+  "gps_step_m",
+  "time_delta_s",
+  "speed_mps",
+  "connects_from_previous_candidates",
+  "candidate_rank",
+  "n_candidates",
+  "distance_minus_min",
+  "heading_minus_min",
+  "heading_missing"
+ ],
+ "cv_macro_f1": 0.8630181820583906,
+ "cv_macro_f1_std": 0.022914774325953187,
+ "cv_train_macro_f1": 0.8725239036305659,
+ "student_test_macro_f1": 0.8663950226377166,
+ "student_test_top1_accuracy": 0.8087160751565762,
+ "candidate_accuracy": 0.9269687669254378,
+ "precision": 0.6727836947360355,
+ "recall": 0.9178382898656771,
+ "log_loss": 0.17609105291284377,
+ "brier": 0.05325983946707247,
+ "calibrated_log_loss": 0.12907142690956563,
+ "calibrated_brier": 0.038739977999490645,
+ "route_continuity": 0.9008355091383812,
+ "nearest_road_baseline_top1": 0.5635699373695199,
+ "nearest_road_baseline_continuity": 0.8193211488250652,
+ "training_time_s": 61.819870710372925,
+ "inference_time_s": 0.7051882743835449,
+ "excluded_unreliable_train_trips": [
+  "00000033",
+  "00000054"
+ ],
+ "n_train_trips": 78,
+ "n_train_candidates": 1340613,
+ "n_test_trips": 10,
+ "n_test_candidates": 138475,
+ "n_test_observations": 19160,
+ "candidate_miss_rate": 0.0014091858037578175,
+ "validation": "5-fold GroupKFold (group = trip_id)",
+ "random_seed": 42,
+ "software": {
+  "python": "3.13.18",
+  "sklearn": "1.9.1"
+ }
+}
