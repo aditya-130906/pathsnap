@@ -13,7 +13,7 @@ GPS track ──► projection to metres ──► candidate arcs ──► feat
 
 **[Open the team's final report: A-G03_PathSnap_Report.pdf](https://github.com/aditya-130906/pathsnap/blob/main/A-G03_PathSnap_Report.pdf)** (Team A-G03 final submission; a copy is at `outputs/report/A-G03_PathSnap_Report.pdf`).
 
-> `outputs/report/PathSnap_Previous_System_Report.pdf` is an older report on the earlier system, kept for reference only.
+> `outputs/report/PathSnap_Previous_System_Documentation.pdf` is an older report on the earlier system, kept for reference only.
 
 ---
 
@@ -53,7 +53,7 @@ Secondary metric (direction-corrected labels, 814 labels changed, see below): HG
   Tuned model: `models/histogram_gradient_boosting/hgb_model_tuned.joblib`; history in `outputs/histogram_gradient_boosting/optuna/`.
 - HMM v1 tuning (in-sample emissions): Optuna TPE on 14 train trips, 30 trials; config `outputs/hmm_viterbi/tuning/best_hmm_config.json`.
 - Five-model comparison (with pipeline and denominator notes): `outputs/comparison/model_comparison.md`.
-- Earlier system report (previous version, not the final submission): `outputs/report/PathSnap_Previous_System_Report.pdf`. Route maps: `outputs/hmm_viterbi/maps/`.
+- Earlier system report (previous version, not the final submission): `outputs/report/PathSnap_Previous_System_Documentation.pdf`. Route maps: `outputs/hmm_viterbi/maps/`.
 - Two-laptop setup, firewall and demo script: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Run the deployed system
